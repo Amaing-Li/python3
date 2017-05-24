@@ -11,7 +11,7 @@ def print_unicode_table(words):
 
     while code < end:
         c = chr(code)
-        name = unicodedata.name(c, "*** unknown ***")
+        name = unicodedata.name(c, "*** unknown ***")  # name or unknown
         ok = True
         for word in words:  # both contain
             if word not in name.lower():
