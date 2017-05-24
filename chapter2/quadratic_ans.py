@@ -54,3 +54,12 @@ equation += "= 0 \N{RIGHTWARDS ARROW} x = {0}".format(x1)
 if x2 is not None:
     equation += " or x = {0}".format(x2)
 print(equation)
+
+
+# output
+
+# ax² + bx + c = 0
+# enter a: 1
+# enter b: 12
+# enter c: 3
+# 1.0x² + 12.0x + 3.0 = 0 → x = -0.2554373534619714 or x = -11.744562646538029
