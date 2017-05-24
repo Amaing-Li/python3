@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# 2017-5-24
 import sys
 import collections
 
@@ -43,8 +43,8 @@ def generate_username(fields,usernames):
 def print_users(users):
     namewidth = 32
     usernamewidth = 9
-    print("{0:<{nw}} {1:^6} {2:{uw}}".format("Name","ID","Username",nw=namewidth,uw=usernamewidth))
-    print("{0:-<{nw}} {0:-<6} {0:-<{uw}}".format("",nw=namewidth,uw=usernamewidth))
+    print("{0:<{nw}} {1:^6} {2:{uw}}".format("Name","ID","Username",nw=namewidth,uw=usernamewidth)) # the head
+    print("{0:-<{nw}} {0:-<6} {0:-<{uw}}".format("",nw=namewidth,uw=usernamewidth)) # the delimiter
     for key in sorted(users):
         user = users[key]
         initial = ""
