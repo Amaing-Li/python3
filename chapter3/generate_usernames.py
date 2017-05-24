@@ -1,12 +1,13 @@
-# 2017-5-24
+# 2017-5-24 limingming
 import sys
 import collections
 
 # 1601:Albert:Lukas:Montgomeery:Legal
 # 4730:Nadelle::Landale:Warehousing
 
-ID,FORENAME,MIDDLENAME,SURNAME,DEPARTMENT=range(5)
-User = collections.namedtuple("User","username forename middlename surname id")
+ID, FORENAME, MIDDLENAME, SURNAME, DEPARTMENT = range(5)
+User = collections.namedtuple("User", "username forename middlename surname id")
+
 
 def main():
     if len(sys.argv) == 1 or sys.argv[1] in {"-h", "--help"}:
@@ -14,44 +15,48 @@ def main():
         sys.exit()
 
     usernames = set()
-    users = {} # dictionary
+    users = {}  # dictionary
     for filename in sys.argv[1:]:
         for line in open(filename, encoding="utf8"):
             line = line.rstrip()
-            if line: # ignore blank lines
+            if line:  # ignore blank lines
                 user = process_line(line, usernames)
-                users[(user.surname.lower(), user.forename.lower(), user.id)] = user # key-value
+                users[(user.surname.lower(), user.forename.lower(), user.id)] = user  # key-value
     print_users(users)
 
-def process_line(line,usernames):
-    fields = line.split(":") # ID,FORENAME,MIDDLENAME,SURNAME,DEPARTMENT=range(5)
-    username = generate_username(fields,usernames)
-    user = User(username,fields[FORENAME],fields[MIDDLENAME],fields[SURNAME],fields[ID])
+
+def process_line(line, usernames):
+    fields = line.split(":")  # ID,FORENAME,MIDDLENAME,SURNAME,DEPARTMENT=range(5)
+    username = generate_username(fields, usernames)
+    user = User(username, fields[FORENAME], fields[MIDDLENAME], fields[SURNAME], fields[ID])
     return user
 
-def generate_username(fields,usernames):
+
+def generate_username(fields, usernames):
     # username = first letter of forename + first letter of middlename + suername
-    username = ((fields[FORENAME][0] + fields[MIDDLENAME][:1]+fields[SURNAME]).replace("-","").replace("'",""))
+    username = ((fields[FORENAME][0] + fields[MIDDLENAME][:1] + fields[SURNAME]).replace("-", "").replace("'", ""))
     username = original_name = username[:8].lower()
-    count =1
+    count = 1
     while username in usernames:
-        username="{0}{1}".format(original_name,count) # for the same username, plus 1 to be distinct
-        count +=1
+        username = "{0}{1}".format(original_name, count)  # for the same username, plus 1 to be distinct
+        count += 1
     usernames.add(username)
     return username
+
 
 def print_users(users):
     namewidth = 32
     usernamewidth = 9
-    print("{0:<{nw}} {1:^6} {2:{uw}}".format("Name","ID","Username",nw=namewidth,uw=usernamewidth)) # the head
-    print("{0:-<{nw}} {0:-<6} {0:-<{uw}}".format("",nw=namewidth,uw=usernamewidth)) # the delimiter
+    print("{0:<{nw}} {1:^6} {2:{uw}}".format("Name", "ID", "Username", nw=namewidth, uw=usernamewidth))  # the head
+    print("{0:-<{nw}} {0:-<6} {0:-<{uw}}".format("", nw=namewidth, uw=usernamewidth))  # the delimiter
     for key in sorted(users):
         user = users[key]
         initial = ""
         if user.middlename:
-            initial=" "+user.middlename[0]
-        name = "{0.surname}, {0.forename}{1}".format(user,initial)
-        print("{0:.<{nw}} ({1.id:4}) {1.username:{uw}}".format(name,user,nw=namewidth,uw=usernamewidth))
+            initial = " " + user.middlename[0]
+        name = "{0.surname}, {0.forename}{1}".format(user, initial)
+        print("{0:.<{nw}} ({1.id:4}) {1.username:{uw}}".format(name, user, nw=namewidth, uw=usernamewidth))
+
 
 main()
 
@@ -61,4 +66,3 @@ main()
 # Landale, Nadelle................ (4730) nlandale
 # Li, Amaing M.................... (1234) amli
 # Montgomeery, Albert L........... (1601) almontgo
-
