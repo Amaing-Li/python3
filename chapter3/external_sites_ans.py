@@ -15,8 +15,6 @@ for filename in sys.argv[1:]:
                         site = line[i:j].lower()
                         break
                 if site and "." in site:
-                    # can not use sites[site].add(filename),
-                    #  because this raise a KeyError exception the first time a new site is encountered
                     sites[site].add(filename)
                 i = j
             else:
