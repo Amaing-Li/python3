@@ -3,7 +3,7 @@ import \
     xml.sax.saxutils  # escape function: takes a string and returns an equivalent string with the special HTML characters in their escape forms
 
 COPYRIGHT_TEMPLATE = "Copyright (c) {0} {1}. All rights reserved."
-STYLESHEET_TEMPLATE = ('link rel="stylesheet" type="text/css" media="all" href="{0}" />\n')
+STYLESHEET_TEMPLATE = ('<link rel="stylesheet" type="text/css" media="all" href="{0}" />\n')
 # just as it name says, stylesheet is a file(sheet) that controls the html style
 HTML_TEMPLATE = """<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" \
@@ -149,3 +149,39 @@ def get_integer(message, name="integer", default=None, minimum=0, maximum=1, all
 
 
 main()
+
+
+# bogon:Python ali$ ./make_html_skeleton.py
+
+# Make HTML Skeleton
+
+# Enter your name (for copyright): Amaing Li
+# Enter copyright year [2017]:
+# Enter filename: skeleton_test
+# Enter title: skeleton_test
+# Enter a keyword (optional): test
+# Enter a keyword (optional):
+# Enter the stylesheet filename  [stylesheet]: style
+# Saved skeleton skeleton_test.html
+
+
+
+
+
+
+# <?xml version="1.0"?>
+# <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "html://www.w3.org/TR/xhtml1/DTD/xhtml-strict.dtd">
+# <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+# <head>
+# <title>skeleton_test</title>
+# <!-- Copyright (c) 2017 Amaing Li. All rights reserved. --->
+# <meta name="Description" content="test" />
+# <meta name="Keywords" content="" />
+# <meta equiv="content-type" content-"text/html"; charset=utf-8" />
+# <link rel="stylesheet" type="text/css" media="all" href="style.css" />
+# </head>
+# <body>
+
+# </body>
+# </html>
+#
