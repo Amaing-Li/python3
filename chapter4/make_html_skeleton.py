@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import datetime  # for creating datetime.data and datetime.time objects
 import \
     xml.sax.saxutils  # escape function: takes a string and returns an equivalent string with the special HTML characters in their escape forms
