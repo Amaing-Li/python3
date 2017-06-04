@@ -91,6 +91,21 @@ def shorten(text, length=25, indicator="..."):
     return text
 
 
+# whenever a module is imported Python creates avariable for the module called __name__ and stores the module's name in this variable.
+# a module's name is simply the name of its .py file but without the extension.
+# when the module is imported __name__ will have the value "TextUtil", and the if condition will not be met, so the last two lines will not be executed.
+# whenever a .py file is run Python creates a variable for the program called __name__ and sets it to the string "__main__".
+# so if we were to run TextUtil.py as though if were a program, Python will set __name__ to "__main__" and
+# the if condition will evaluate to True and the last two lines will be executed.
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+# examples in docstrings that can be executed as tests are called doctests.
+
+
+# if we want the TextUtil module to be available to a particular program, we just need to put TextUtil.py in the same directory as the program.
+
+# if we want TextUtil.py to be available to all our programs, there are three approaches:
+# 1. put the module in the Python distribution's site-packages subdirectory
+# 2. set the PYTHONPATH environment vairable to this directory
+# 3. put the module in the local site-packages subdirectory
