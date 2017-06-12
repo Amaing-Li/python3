@@ -65,7 +65,7 @@ class FuzzyBool:
 
     # some python programmers consider the use of static methods to be un-Pythonic,
     # and use them only if they are converting code from another language (such as C++ and Java)
-    # or if they have a method that does not use self 
+    # or if they have a method that does not use self
     @staticmethod
     def disconjunction(*fuzzies):
         return FuzzyBool(max(float(x) for x in fuzzies))
