@@ -133,6 +133,20 @@ class SortedDict(dict):
         # and the self object. But we can make it work on any class and any object
         # by passing in a class and an object explicitly.
 
+    __copy__ = copy  # copy.copy() uses our custom copy method
+
+
+    def value_at(self,index):
+        # thanks to inheritance, we can look up values in the SortedDict
+        # using the item access oprator([]) applied directly to self,
+        # since self is a dict. If an out-of-range index is given
+        # the methods raise an indexError exception
+        return self[self.__keys[index]]
+
+
+    def set_value_at(self,index,value):
+        self[self.__keys[index]] = value
+
 
 class MyDict(SortedDict): pass
 
