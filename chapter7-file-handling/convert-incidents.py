@@ -97,3 +97,22 @@ class Incident:
     @property
     def approximate_hours_on_type(self):
         return int(self.__pilot_total_hours * self.__pilot_percent_hours_on_type / 100)
+
+
+class IncidentCollection(dict):  # extends dict  # no need to reimplement the initializer
+    # dict.__init_() is sufficient
+    # key:report_id
+    # value:Incident
+    def values(self):
+        for report_id in self.keys():  # call __iter__
+            yield self[report_id]
+
+    def items(self):
+        for report_id in self.keys():  # call __iter__K
+            yield (report_id, self[report_id])
+
+    def __iter__(self):
+        for report_id in sorted(super().keys()):  # sorted
+            yield report_id
+
+    keys = __iter__()
