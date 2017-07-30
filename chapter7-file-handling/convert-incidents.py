@@ -5,6 +5,8 @@ import os
 
 import sys
 
+GZIP_MAGIC = b"\x1F\x88"  # magic number: a sequence of one or more bytes at the beginning of a file that is used to indicate the file's type
+
 
 class IncidentError(Exception): pass
 
@@ -122,7 +124,15 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
 
     keys = __iter__()
 
-    def export_pickle(self, filename, compress=False): # the pickled data is self, a dict.
+    def export_pickle(self, filename, compress=False):
+        """
+        write the IncidentsCollections to file
+        :param filename:
+        :param compress: gzip or not
+        :return: success or not
+        """
+
+        # the pickled data is self, a dict.
         # the pickle module is smart enough to be able to save objects of most custom classes without us
         # needing to intervene
         fh = None
@@ -139,3 +149,30 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
         finally:
             if fh is not None:
                 fh.close()  # close the file
+
+    def import_pickle(self, filename):
+        """
+        read IncidentsCollections file
+
+        :param filename:
+        :return: success or not
+        """
+        fh = None
+        try:
+            fh = open(filename, "rb")  # read binary
+            magic = fh.read(len(GZIP_MAGIC))  # read the first two bytes
+            if magic == GZIP_MAGIC:  # if these btyes are the same as the gzip magic number, close the file and create a new file object using the gzip.open() function
+                fh.close()
+                fh = gzip.open(filename, "rb")
+            else:  # the file is not compressed
+                fh.seek(0)  # file poointer to the beginning of the file
+            self.clear()  # we can't assign to self since that would wipe out the IncidentCollection object that is in use
+            # so instead we clear all the incidents to make the dictionary empty
+            self.update(pickle.load(fh))# populate the dictionary with all the incidents from the IncidentCollection dictionary loaded from the pickle
+            return True
+        except (EnvironmentError, pickle.UnpicklingError) as err:
+            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]), err))
+            return False
+        finally:
+            if fh is not None:
+                fh.close()
