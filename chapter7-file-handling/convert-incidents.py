@@ -5,7 +5,17 @@ import os
 
 import sys
 
+import struct
+
 GZIP_MAGIC = b"\x1F\x88"  # magic number: a sequence of one or more bytes at the beginning of a file that is used to indicate the file's type
+
+MAGIC = b"AIB\x00"  # for custom raw binary file
+FORMAT_VERSION = b"\x00\x01"  # for custom raw binary file
+# I: 32-bit unsigned integer
+# d: 64-bit float
+# i: 32-bit signed integer
+# ?: boolean
+NumbersStruct = struct.Struct("<Idi?")
 
 
 class IncidentError(Exception): pass
@@ -161,17 +171,63 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
         try:
             fh = open(filename, "rb")  # read binary
             magic = fh.read(len(GZIP_MAGIC))  # read the first two bytes
-            if magic == GZIP_MAGIC:  # if these btyes are the same as the gzip magic number, close the file and create a new file object using the gzip.open() function
+            # if these btyes are the same as the gzip magic number,
+            # close the file and create a new file object using the gzip.open() function
+            if magic == GZIP_MAGIC:
                 fh.close()
                 fh = gzip.open(filename, "rb")
             else:  # the file is not compressed
-                fh.seek(0)  # file poointer to the beginning of the file
-            self.clear()  # we can't assign to self since that would wipe out the IncidentCollection object that is in use
-            # so instead we clear all the incidents to make the dictionary empty
-            self.update(pickle.load(fh))# populate the dictionary with all the incidents from the IncidentCollection dictionary loaded from the pickle
+                # file poointer to the beginning of the file
+                fh.seek(0)
+            # we can't assign to self since that would wipe out the IncidentCollection object
+            # that is in use so instead we clear all the incidents to make the dictionary empty
+            self.clear()
+            # populate the dictionary with all the incidents from the IncidentCollection dictionary
+            # loaded from the pickle
+            self.update(pickle.load(fh))
             return True
         except (EnvironmentError, pickle.UnpicklingError) as err:
             print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]), err))
+            return False
+        finally:
+            if fh is not None:
+                fh.close()
+
+    def export_binary(self, filename, compress=False):
+        def pack_string(string):  # inner function
+            data = string.encode("utf8")
+            # to hold a struct format based on the string's length.
+            # h: 16-bit signed integer, H: 16-bit unsigned integer
+            # <: little-endian
+            # >: big-endian
+            format = "<H{0}s".format(len(data))
+            return struct.pack(format, len(data), data)
+
+        fh = None
+        try:
+            if compress:
+                fh = gzip.open(filename, "wb")
+            else:
+                fh = open(filename, "wb")
+            fh.write(MAGIC)
+            fh.write(FORMAT_VERSION)
+            for incident in self.values():
+                data = bytearray()
+                data.extend(pack_string(incident.report_id))
+                data.extend(pack_string(incident.airport))
+                data.extend(pack_string(incident.aircraft_id))
+                data.extend(pack_string(incident.aircraft_type))
+                data.extend(pack_string(incident.narrative.strip()))
+                data.extend(NumbersStruct.pack(
+                    incident.date.toordinal(),
+                    incident.pilot_percent_hours_on_type,
+                    incident.pilot_total_hours,
+                    incident.midair
+                ))
+                fh.write(data)
+            return True
+        except EnvironmentError as err:
+            print("{0}: export error: {1}".format(os.path.basename(sys.argv[0]), err))
             return False
         finally:
             if fh is not None:
