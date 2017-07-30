@@ -1,4 +1,9 @@
 import datetime
+import gzip
+import pickle
+import os
+
+import sys
 
 
 class IncidentError(Exception): pass
@@ -116,3 +121,21 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
             yield report_id
 
     keys = __iter__()
+
+    def export_pickle(self, filename, compress=False): # the pickled data is self, a dict.
+        # the pickle module is smart enough to be able to save objects of most custom classes without us
+        # needing to intervene
+        fh = None
+        try:
+            if compress:
+                fh = gzip.open(filename, "wb")  # gzip compression, write binary
+            else:
+                fh = open(filename, "wb")  # write binary
+            pickle.dump(self, fh,
+                        pickle.HIGHEST_PROTOCOL)  # write file with pickle, HIGHEST_PROTOCOL, a compact binary pickle format
+            return True
+        except(EnvironmentError, pickle.PickleError) as err:
+            print("{0}: export error: {1}".format(os.path.basename(sys.argv[0]), err))
+        finally:
+            if fh is not None:
+                fh.close()  # close the file
