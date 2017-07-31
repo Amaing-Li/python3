@@ -232,3 +232,21 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
         finally:
             if fh is not None:
                 fh.close()
+
+    def import_binary(self,filename):
+        def unpack_string(fh,eof_is_error=True):
+            unit16=struct.Struct("<H") # little-endian, 16-bit unsigned
+            length_data = fh.read(unit16.size)
+            if not length_data: # null
+                if eof_is_error:
+                    raise ValueError("missing or corrupt string size")
+                return None
+            length=unit16.unpack(length_data)[0]
+            if length==0:
+                return ""
+            data = fh.read(length)
+            if not data or len(data)!=length:
+                raise ValueError("missing or corrupt string")
+            format = "<{0}s".format(length)
+            return struct.unpack(format,data)[0].decode("utf8")
+        
