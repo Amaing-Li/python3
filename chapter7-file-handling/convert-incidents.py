@@ -322,3 +322,63 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
         finally:
             if fh is not None:
                 fh.close()
+
+    def import_text_manual(self, filename):
+        # part 1
+        fh = None
+        try:
+            fh = open(filename, encoding="utf8")  # read text mode
+            self.clear()
+            data = {}
+            # two purposes: as a state indicator and to store the current incident's narrative text
+            narrative = None
+
+            # part 2
+            for lino, line in enumerate(fh, start=1):
+                line = line.rstrip()
+                # if narrative is None it means that we are not currently reading a narrative;
+                # but if it is a string (even an empty one) it means we are in the process of reading narrative lines
+                # skip blank lines between incident but preserve any blank lines in narrative text
+                if not line and narrative is None:
+                    continue
+                if narrative is not None:
+                    if line == ".NARRATIVE_END.":
+                        # remove any common leading whitespace from every line
+                        data["narrative"] = textwrap.dedent(narrative).strip()
+                        if len(data) != 9:
+                            raise IncidentError("missing data on line {0}".format(lino))
+                        incident = Incident(**data)
+                        self[incident.report_id] = incident
+                        data = {}
+                        narrative = None
+                    else:
+                        narrative += line + "\n"
+                # part 3
+                elif (not data and line[0] == "[" and line[-1] == "]"):
+                    data["report_id"] = line[1:-1]
+                # part 4
+                elif "=" in line:
+                    key, value = line.split("=", 1) # maximum of one split, the value can safely include = characters
+                    if key == "date":
+                        # parse time string into datetime with certain format
+                        data[key] = datetime.datetime.strptime(value, "%Y-%m-%d").date() # to retrieve a date from datetime
+                    elif key == "pilot_percent_hours_on_type":
+                        data[key]=float(value)
+                    elif key == "pilot_total_hours":
+                        data[key]=int(value)
+                    elif key == "midair":
+                        data[key]=bool(int(value))
+                    else:
+                        data[key]=value
+                elif line == ".NARRATIVE_START.":
+                    narrative = ""
+                else:
+                    raise KeyError("parsing error on line {0}".format(lino))
+
+            return True
+        except (EnvironmentError,ValueError,KeyError,IncidentError) as err:
+            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]),err))
+            return False
+        finally:
+            if fh is not None:
+                fh.close()
