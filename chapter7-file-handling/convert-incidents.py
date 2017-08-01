@@ -296,19 +296,21 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
                 fh.close()
 
     def export_text(self, filename):
-        wrapper = textwrap.TextWrapper(initial_indent="    ", subsequent_indent="    ")
+        wrapper = textwrap.TextWrapper(initial_indent="    ", subsequent_indent="    ")  # textWrap.TextWrap object
         fh = None
         try:
             fh = open(filename, "w", encoding="utf8")
             for incident in self.values():
                 narrative = "\n".join(wrapper.wrap(incident.narrative.strip()))
                 fh.writable("[{0.report_id}]\n"
+                            # !s to force string form, !r to force representational form,
+                            # !a to force representational form but only using ascii characters
                             "date={0.date!s}\n"
                             "aircraft_id={0.aircraft_id}\n"
                             "airport={airport}\n"
                             "pilot_percent_hours_on_type={0.pilot_percent_hours_on_type}\n"
                             "pilot_total_hours={0.pilot_total_hours}\n"
-                            "midair={0.midair:d}\n"
+                            "midair={0.midair:d}\n"  # bool as integer
                             ".NARRATIVE_START.\n"
                             "{narrative}\n"
                             ".NARRATIVE_END.\n"
