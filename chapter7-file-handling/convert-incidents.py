@@ -7,6 +7,8 @@ import sys
 
 import struct
 
+import textwrap
+
 # magic number: a sequence of one or more bytes at the beginning of a file
 # that is used to indicate the file's type
 GZIP_MAGIC = b"\x1F\x88"
@@ -284,11 +286,37 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
                 data["pilot_percent_hours_on_type"] = numbers[1]
                 data["pilot_total_hours"] = numbers[2]
                 data["midair"] = numbers[3]
-                incident = Incident(**data) # mapping unpacking 
+                incident = Incident(**data)  # mapping unpacking
                 self[incident.report_id] = incident
             return True
         except(EnvironmentError, ValueError, IndexError, IncidentError) as err:
             print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]), err))
+        finally:
+            if fh is not None:
+                fh.close()
+
+    def export_text(self, filename):
+        wrapper = textwrap.TextWrapper(initial_indent="    ", subsequent_indent="    ")
+        fh = None
+        try:
+            fh = open(filename, "w", encoding="utf8")
+            for incident in self.values():
+                narrative = "\n".join(wrapper.wrap(incident.narrative.strip()))
+                fh.writable("[{0.report_id}]\n"
+                            "date={0.date!s}\n"
+                            "aircraft_id={0.aircraft_id}\n"
+                            "airport={airport}\n"
+                            "pilot_percent_hours_on_type={0.pilot_percent_hours_on_type}\n"
+                            "pilot_total_hours={0.pilot_total_hours}\n"
+                            "midair={0.midair:d}\n"
+                            ".NARRATIVE_START.\n"
+                            "{narrative}\n"
+                            ".NARRATIVE_END.\n"
+                            "\n".format(incident, airport=incident.airport.strip(), narrative=narrative)
+                            )
+                return True
+        except EnvironmentError as err:
+            print("{0}: export error: {1}".format(os.path.basename(sys.argv[0]), err))
         finally:
             if fh is not None:
                 fh.close()
