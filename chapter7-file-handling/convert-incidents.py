@@ -7,7 +7,9 @@ import sys
 
 import struct
 
-GZIP_MAGIC = b"\x1F\x88"  # magic number: a sequence of one or more bytes at the beginning of a file that is used to indicate the file's type
+# magic number: a sequence of one or more bytes at the beginning of a file
+# that is used to indicate the file's type
+GZIP_MAGIC = b"\x1F\x88"
 
 MAGIC = b"AIB\x00"  # for custom raw binary file
 FORMAT_VERSION = b"\x00\x01"  # for custom raw binary file
@@ -233,20 +235,60 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
             if fh is not None:
                 fh.close()
 
-    def import_binary(self,filename):
-        def unpack_string(fh,eof_is_error=True):
-            unit16=struct.Struct("<H") # little-endian, 16-bit unsigned
+    def import_binary(self, filename):
+        def unpack_string(fh, eof_is_error=True):
+            unit16 = struct.Struct("<H")  # little-endian, 16-bit unsigned
             length_data = fh.read(unit16.size)
-            if not length_data: # null
+            if not length_data:  # null
                 if eof_is_error:
                     raise ValueError("missing or corrupt string size")
                 return None
-            length=unit16.unpack(length_data)[0]
-            if length==0:
+            length = unit16.unpack(length_data)[0]
+            if length == 0:
                 return ""
             data = fh.read(length)
-            if not data or len(data)!=length:
+            if not data or len(data) != length:
                 raise ValueError("missing or corrupt string")
             format = "<{0}s".format(length)
-            return struct.unpack(format,data)[0].decode("utf8")
-        
+            return struct.unpack(format, data)[0].decode("utf8")
+
+        fh = None
+        try:
+            fh = open(filename, "rb")  # the file may or may not compressed
+            magic = fh.read(len(GZIP_MAGIC))  # read the first four bytes
+            if magic == GZIP_MAGIC:
+                fh.close()
+                fh = gzip.open(filename, "rb")
+            else:
+                fh.seek(0)
+            magic = fh.read(len(MAGIC))
+            if magic != MAGIC:  # isn't a binary aircraft incident data file
+                raise ValueError("invalid .aib file format")
+            version = fh.read(len(FORMAT_VERSION))  # read 2 bytes version number
+            if version > FORMAT_VERSION:  # the version is a later one
+                raise ValueError("unrecognized .aib file version")
+            self.clear()  # empty the dict
+
+            while True:
+                report_id = unpack_string(fh, False)
+                if report_id is None:
+                    break
+                data = {}
+                data["report_id"] = report_id  # dict add element
+                for name in ("airport", "aircraft_id", "aircraft_type", "narrative"):  # set
+                    data[name] = unpack_string(fh)
+                other_data = fh.read(NumbersStruct.size)
+                # NumbersStruct = struct.Struct("<Idi?")
+                numbers = NumbersStruct.unpack(other_data)
+                data["date"] = datetime.date.fromordinal(numbers[0])
+                data["pilot_percent_hours_on_type"] = numbers[1]
+                data["pilot_total_hours"] = numbers[2]
+                data["midair"] = numbers[3]
+                incident = Incident(**data) # mapping unpacking 
+                self[incident.report_id] = incident
+            return True
+        except(EnvironmentError, ValueError, IndexError, IncidentError) as err:
+            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]), err))
+        finally:
+            if fh is not None:
+                fh.close()
