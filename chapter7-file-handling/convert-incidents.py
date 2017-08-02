@@ -9,6 +9,8 @@ import struct
 
 import textwrap
 
+import re
+
 # magic number: a sequence of one or more bytes at the beginning of a file
 # that is used to indicate the file's type
 GZIP_MAGIC = b"\x1F\x88"
@@ -382,3 +384,10 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
         finally:
             if fh is not None:
                 fh.close()
+
+
+    def import_text_regex(self,filename):
+        incident_re = re.compile(
+            r"\[(?P<id>[^]]+)\](?P<keyvalues>.+?)"  #
+
+        )
