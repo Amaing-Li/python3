@@ -360,34 +360,76 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
                     data["report_id"] = line[1:-1]
                 # part 4
                 elif "=" in line:
-                    key, value = line.split("=", 1) # maximum of one split, the value can safely include = characters
+                    key, value = line.split("=", 1)  # maximum of one split, the value can safely include = characters
                     if key == "date":
                         # parse time string into datetime with certain format
-                        data[key] = datetime.datetime.strptime(value, "%Y-%m-%d").date() # to retrieve a date from datetime
+                        data[key] = datetime.datetime.strptime(value,
+                                                               "%Y-%m-%d").date()  # to retrieve a date from datetime
                     elif key == "pilot_percent_hours_on_type":
-                        data[key]=float(value)
+                        data[key] = float(value)
                     elif key == "pilot_total_hours":
-                        data[key]=int(value)
+                        data[key] = int(value)
                     elif key == "midair":
-                        data[key]=bool(int(value))
+                        data[key] = bool(int(value))
                     else:
-                        data[key]=value
+                        data[key] = value
                 elif line == ".NARRATIVE_START.":
                     narrative = ""
                 else:
                     raise KeyError("parsing error on line {0}".format(lino))
 
             return True
-        except (EnvironmentError,ValueError,KeyError,IncidentError) as err:
-            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]),err))
+        except (EnvironmentError, ValueError, KeyError, IncidentError) as err:
+            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]), err))
+            return False
+        finally:
+            if fh is not None:
+                fh.close()
+
+    def import_text_regex(self, filename):
+        incident_re = re.compile(
+            # raw string
+            # [] needs escape
+            # (?P<id>) store the matched content in id
+            r"\[(?P<id>[^]]+)\](?P<keyvalues>.+?)"
+            r"^\.NARRATIVE_START\.$(?P<narrative>.*?)"
+            r"^\.NARRATIVE_END\.$",
+            # make dot match newline
+            # re.MULTILINE: make anchors look for newline, ^ matches at the start of every line,
+            # rather than just at the end of the string
+            re.DOTALL | re.MULTILINE)
+        key_value_re = re.compile(r"^\s*(?P<key>[^=]+?)\s*=\s*"
+                                  # \s:Matches a whitespace character,
+                                  # which in ASCII are tab, line feed, form feed, carriage return, and space;
+                                  r"(?P<value>.+?)\s*$", re.MULTILINE)
+
+        fh = None
+        try:
+            fh = open(filename, "r", encoding="ut8")
+            self.clear()
+            for incident_match in incident_re.finditer(fh.read()):
+                data = {}
+                data["report_id"] = incident_match.group("id")
+                data["narrative"] = textwrap.dedent(incident_match.group("narrative")).strip()
+                keyvalues = incident_match.group("keyvalues")
+                for match in key_value_re.finditer(keyvalues):
+                    data[match.group("key")] = match.group("value")
+                data["date"] = datetime.datetime.strftime(data["date"], "%Y-%m-%d").date()
+                data["pilot_percent_hours_on_type"] = (float(data["pilot_percent_hours_on_type"]))
+                data["pilot_total_hours"] = int(data["pilot_total_hours"])
+                data["midair"] = bool(data["midair"])
+                if len(data) != 9:
+                    raise IncidentError("missing data")
+                incident = Incident(**data)
+                self[incident.report_id, incident]
+            return True
+        except (EnvironmentError, ValueError, KeyError, IncidentError) as err:
+            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]), err))
             return False
         finally:
             if fh is not None:
                 fh.close()
 
 
-    def import_text_regex(self,filename):
-        incident_re = re.compile(
-            r"\[(?P<id>[^]]+)\](?P<keyvalues>.+?)"  #
 
-        )
+
