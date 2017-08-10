@@ -10,6 +10,7 @@ import struct
 import textwrap
 
 import re
+import xml
 
 # magic number: a sequence of one or more bytes at the beginning of a file
 # that is used to indicate the file's type
@@ -432,4 +433,26 @@ class IncidentCollection(dict):  # extends dict  # no need to reimplement the in
 
 
 
+    def export_xml_etree(self,filename):
+        root = xml.etree.ElementTree.Element("incidents")
+        for incident in self.values():
+            element = xml.etree.ElementTree.Element("incident",report_id=incident.report_id,
+                                                    date=incident.isoformat(),
+                                                    aircraft_id=incident.aircraft_id,
+                                                    aircraft_type=incident.aircraft_type,
+                                                    pilot_percent_hours_on_type=str(incident.pilot_percent_hours_on_type),
+                                                    pilot_total_hours=str(incident.pilot_total_hours),
+                                                    midair=str(int(incident.midair)))
+            airport = xml.etree.ElementTree.SubElement(element,"airport")
+            airport.text=incident.airport.strip()
+            narrative = xml.etree.ElementTree.SubElement(element,"narrative")
+            narrative.text = incident.narrative.strip()
+            root.append(element)
+        tree = xml.etree.ElementTree.ElementTree(root)
 
+        try:
+            tree.write(filename,'UTF-8') # utf8 not accepted
+        except EnvironmentError as err:
+            print("{0}: import error: {1}".format(os.path.basename(sys.argv[0]),err))
+            return False
+        return True
